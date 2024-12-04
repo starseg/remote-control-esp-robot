@@ -13,7 +13,7 @@ import JoystickButton from "@/components/joystick-button";
 
 export default function Home() {
   const [movement, setMovement] = useState("stop");
-  const [speed, setSpeed] = useState([25]);
+  const [speed, setSpeed] = useState([20]);
 
   useEffect(() => {
     client.publish("robot/move", movement);
@@ -22,6 +22,14 @@ export default function Home() {
   useEffect(() => {
     client.publish("robot/speed", speed.toString());
   }, [speed]);
+
+  // useEffect(() => {
+  //   client.on("message", (topic, message) => {
+  //     if (topic === "robot/speed") {
+  //       setSpeed([parseInt(message.toString())]);
+  //     }
+  //   });
+  // })
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -82,7 +90,7 @@ export default function Home() {
             {/* <video ref={videoRef} controls autoPlay className="w-full" /> */}
           </div>
           <p className="mt-2 text-lg">Velocidade: {speed}</p>
-          <Slider max={100} step={25} value={speed} onValueChange={setSpeed} />
+          <Slider max={100} step={10} value={speed} onValueChange={setSpeed} />
         </div>
       </div>
     </div>
