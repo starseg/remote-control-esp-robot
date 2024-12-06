@@ -3,14 +3,16 @@
 #include "NewPingESP8266.h"
 
 // Definição dos pinos para motores
-#define MOTOR_1_PIN_1 5  // D1 -> GPIO 5
-#define MOTOR_1_PIN_2 4  // D2 -> GPIO 4
-#define MOTOR_2_PIN_1 0  // D3 -> GPIO 0
-#define MOTOR_2_PIN_2 2  // D4 -> GPIO 2
-#define ENABLE_PIN 14    // D5 -> GPIO 14
+#define MOTOR_1_PIN_1 5
+#define MOTOR_1_PIN_2 4
+#define MOTOR_2_PIN_1 0
+#define MOTOR_2_PIN_2 2
+#define ENABLE_PIN 14  
 #define ECHO_PIN 13
 #define TRIGGER_PIN 12
 #define FILTER_SIZE 5
+#define LED_PIN 16
+#define BUZZER_SIGNAL 15
 
 
 int distanceReadings[FILTER_SIZE] = {0};
@@ -38,9 +40,10 @@ NewPingESP8266 sonar(TRIGGER_PIN, ECHO_PIN, 100);
 int MAX_DISTANCE = 20;
 
 unsigned long pingTimer;
-unsigned long pingSpeed = 10;
+unsigned long pingSpeed = 50;
 bool canStop = true;  // booleano para controlar para que o carrinho pare apenas uma vez quando chega na distancia maxima
 int distance = 0;
+
 
 // Funções para controle do robô
 void moveRobot(String message) {
@@ -130,12 +133,36 @@ void handleStopCondition() {
   if (distance < MAX_DISTANCE && distance > 0) {
     if (canStop) {
       moveRobot("stop");
-      //changeSpeed("10");
-      //client.publish("robot/speed", "10");
-      canStop = false;
+      canStop = 0;
     }
   } else {
-    canStop = true;
+    Serial.println(distance);
+    canStop = 1;
+  }
+}
+
+// void setColor(int red, int green, int blue) {
+//   analogWrite(RED_LED, red);
+//   analogWrite(GREEN_LED, green);
+//   analogWrite(BLUE_LED, blue);
+// }
+
+void setLed(String message) {
+  analogWriteFreq(40000);
+  if(message == "false") {
+    Serial.println("Acendendo LED");
+    analogWrite(LED_PIN, 255);
+  } else {
+    analogWrite(LED_PIN, 0);
+  }
+}
+
+void honk(String message) {
+  Serial.println(message);
+  if(message == "true") {
+    tone(BUZZER_SIGNAL, 1000);
+  } else {
+    noTone(BUZZER_SIGNAL);
   }
 }
 
@@ -149,6 +176,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
     moveRobot(message);
   } else if (!strcmp(topic, "robot/speed")) {
     changeSpeed(message);
+  } 
+  else if (!strcmp(topic, "robot/led")) {
+    setLed(message);
+  } 
+  else if (!strcmp(topic, "robot/honk")) {
+    honk(message);
   }
 }
 
@@ -159,6 +192,8 @@ void reconnect() {
       Serial.println("Conectado!");
       client.subscribe("robot/move");
       client.subscribe("robot/speed");
+      client.subscribe("robot/honk");
+      client.subscribe("robot/led");
     } else {
       Serial.print("Falha, rc=");
       Serial.print(client.state());
@@ -167,6 +202,7 @@ void reconnect() {
     }
   }
 }
+
 
 void setup() {
   Serial.begin(115200);
@@ -180,6 +216,10 @@ void setup() {
   // Configura o sensor ultrassônico
   pinMode(TRIGGER_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
+  // LED
+  pinMode(LED_PIN, OUTPUT);
+  // // BUZZER
+  pinMode(BUZZER_SIGNAL, OUTPUT);
 
   // Conecta ao WiFi
   Serial.print("Conectando ao WiFi...");

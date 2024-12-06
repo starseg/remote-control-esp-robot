@@ -4,16 +4,21 @@ import {
   ArrowBigLeft,
   ArrowBigRight,
   ArrowBigUp,
+  BellRing,
+  Lightbulb,
   X,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { useEffect, useState } from "react";
 import { client } from "@/lib/mqtt";
 import JoystickButton from "@/components/joystick-button";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const [movement, setMovement] = useState("stop");
   const [speed, setSpeed] = useState([20]);
+  const [led, setLed] = useState(false);
+  const [honk, setHonk] = useState(false);
 
   useEffect(() => {
     client.publish("robot/move", movement);
@@ -63,6 +68,16 @@ export default function Home() {
     };
   }, []);
 
+  function changeLed() {
+    setLed(!led);
+    client.publish("robot/led", led.toString());
+  }
+
+  function handleHonk(state: boolean) {
+    setHonk(state);
+    client.publish("robot/honk", state.toString());
+  }
+
   return (
     <div className="bg-black mx-auto mt-4 p-2 border rounded-xl max-w-screen-sm">
       <h1 className="font-black text-4xl text-center text-primary">Star Seg</h1>
@@ -85,7 +100,17 @@ export default function Home() {
           </JoystickButton>
         </div>
         <div className="flex flex-col gap-2 mx-4">
-          <div className="bg-stone-800 rounded-xl w-72 aspect-video">
+          <div className="bg-stone-800 p-2 rounded-xl w-72 aspect-video">
+            <Button variant={led ? "default" : "outline"} onClick={changeLed}>
+              <Lightbulb />
+            </Button>
+            <Button
+              variant={honk ? "default" : "outline"}
+              onMouseDown={() => handleHonk(true)}
+              onMouseUp={() => handleHonk(false)}
+            >
+              <BellRing />
+            </Button>
             {/* {video && <img src={video} alt="Streaming do robô" />} */}
             {/* <video ref={videoRef} controls autoPlay className="w-full" /> */}
           </div>
